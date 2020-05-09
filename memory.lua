@@ -1,6 +1,6 @@
 --[[
-All of these functions should be self explanitory. They read and write 
-mainmemory using either the physical address or virtual address in 
+All of these functions should be self explanatory. They read and write
+mainmemory using either the physical address or virtual address in
 kernal segment 0 or 1 (since the low 3 bytes are the same for all 3).
 
 That is to say, if the physical address is 0x00123456, then you can pass
@@ -43,7 +43,7 @@ function readU16(addr)
 	return readHWord(addr)
 end
 
-function writeHWord(addr)
+function writeHWord(addr,val)
 	return mainmemory.write_u16_be(bit.band(addr,0x00FFFFFF), val)
 end
 
