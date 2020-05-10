@@ -22,23 +22,23 @@ local draw_proc = 0x0
 
 -- TODO refactor this to obtain game version
 function initGame()
-	print("Setting up")
+    print("Setting up")
 
-	memory.usememorydomain("ROM")
+    memory.usememorydomain("ROM")
 
-	-- TODO
+    -- TODO
 
-	global_context = 0x801C84A0
-	memory.usememorydomain("RDRAM")
+    global_context = 0x801C84A0
+    memory.usememorydomain("RDRAM")
 
-	draw_proc = linkPosXAddr()
+    draw_proc = linkPosXAddr()
 
     COLLISION_DLIST = 0x80500000
     COLLISION_DLIST_END = COLLISION_DLIST;
     VERTEX_ARRAY = 0x80400000
     VERTEX_ARRAY_END = VERTEX_ARRAY;
 
-	print(string.format("gfxCtx: %x",graphicsContext()))
+    print(string.format("gfxCtx: %x",graphicsContext()))
 end
 
 -- TODO: find addresses and merge into initGame()
@@ -54,12 +54,12 @@ end
 -- Builds display list portion for clearing the z-buffer instead of grabbing it from RAM
 -- for version-independence
 function buildClearZBufferDL(dl)
-	dl = gDPPipeSync(dl)
-	dl = gSPTexture(dl,0xFFFF,0xFFFF,0,0,0)
-	dl = gDPSetCombineLERP(dl,0x00327FFF, 0xFFFFF638)
-	dl = gDPSetOtherMode(dl,0x00182C10,0xC8112078)
-	dl = gSPLoadGeometryMode(dl,0x00230405)
-	return dl
+    dl = gDPPipeSync(dl)
+    dl = gSPTexture(dl,0xFFFF,0xFFFF,0,0,0)
+    dl = gDPSetCombineLERP(dl,0x00327FFF, 0xFFFFF638)
+    dl = gDPSetOtherMode(dl,0x00182C10,0xC8112078)
+    dl = gSPLoadGeometryMode(dl,0x00230405)
+    return dl
 end
 
 -- Global Context scene id
@@ -79,7 +79,7 @@ end
 
 -- Global Context warp flag address
 function warpAddr()
-	return global_context + 0x11E15
+    return global_context + 0x11E15
 end
 
 -- Global Context pointer to scene
@@ -95,7 +95,7 @@ end
 -- For the hook to render collision every frame, only works properly if 
 -- link instance is loaded
 function linkPosXAddr()
-	return readWord(global_context + 0x1C44) + 0x24
+    return readWord(global_context + 0x1C44) + 0x24
 end
 
 function getCollisionHeader(coll_header_addr)
@@ -208,7 +208,7 @@ function generateDList()
     --dl = gSPDisplayList(dl, clearZBufferDL) -- clear z-buffer by using premade d-list used by room change actors
     --dl = gDPPipeSync(dl)
 
-	dl = buildClearZBufferDL(dl)
+    dl = buildClearZBufferDL(dl)
 
     dl = gSPMatrix(dl, vaddr , 0x03)
     for i=0,3 do
@@ -254,7 +254,7 @@ function hook()
     --local inputs = joypad.getimmediate()
     --print(inputs["Power"])
     --print(inputs["Reset"])
-	
+    
     gSPEndDisplayList(COLLISION_DLIST_END)
     hookPOLY_XLU_DISP(COLLISION_DLIST)
 end
@@ -264,14 +264,14 @@ local warpHookID
 local drawing = false
 local enabled = false
 function enableCollision()
-	print("Enabling collision")
-	drawing = true
+    print("Enabling collision")
+    drawing = true
     enabled = true
     drawHookID = event.onmemorywrite(hook, draw_proc, "drawing")
-	--drawHookID = event.oninputpoll(hook, "drawing")
-	if update_on_scene_change then
-	    warpHookID = event.onmemorywrite(onSceneChange, warpAddr(), "scene_change_check")
-	end
+    --drawHookID = event.oninputpoll(hook, "drawing")
+    if update_on_scene_change then
+        warpHookID = event.onmemorywrite(onSceneChange, warpAddr(), "scene_change_check")
+    end
 end
 
 function disableCollision()
@@ -281,26 +281,28 @@ function disableCollision()
     drawing = false
     enabled = false
     event.unregisterbyid(drawHookID)
-    event.unregisterbyid(warpHookID)
+	if update_on_scene_change then
+        event.unregisterbyid(warpHookID)
+    end
 end
 
 function initCollision()
-	memory.usememorydomain("RDRAM")
-	getCollisionHeader(staticCollisionHeader())
-	generateDList()
+    memory.usememorydomain("RDRAM")
+    getCollisionHeader(staticCollisionHeader())
+    generateDList()
 end
 
 local alreadyEnabled = false
 function onSceneChange()
     local warp = readByte(warpAddr())
     if warp == 0xEC and not alreadyEnabled then
-		disableCollision()
-		initCollision()
-		enableCollision()
-		alreadyEnabled = true
-	elseif warp == 0x00 then
-		alreadyEnabled = false
-	end
+        disableCollision()
+        initCollision()
+        enableCollision()
+        alreadyEnabled = true
+    elseif warp == 0x00 then
+        alreadyEnabled = false
+    end
 end
 
 initGame()
@@ -308,5 +310,5 @@ initCollision()
 enableCollision()
 
 while true do
-	emu.frameadvance()
+    emu.frameadvance()
 end
